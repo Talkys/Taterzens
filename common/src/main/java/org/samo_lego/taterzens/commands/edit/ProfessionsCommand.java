@@ -20,7 +20,10 @@ import org.samo_lego.taterzens.commands.NpcCommand;
 import org.samo_lego.taterzens.interfaces.ITaterzenEditor;
 import org.samo_lego.taterzens.npc.TaterzenNPC;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,7 +32,10 @@ import static net.minecraft.commands.Commands.literal;
 import static net.minecraft.commands.arguments.MessageArgument.message;
 import static org.samo_lego.taterzens.Taterzens.PROFESSION_TYPES;
 import static org.samo_lego.taterzens.Taterzens.config;
-import static org.samo_lego.taterzens.util.TextUtil.*;
+import static org.samo_lego.taterzens.util.TextUtil.errorText;
+import static org.samo_lego.taterzens.util.TextUtil.joinText;
+import static org.samo_lego.taterzens.util.TextUtil.successText;
+import static org.samo_lego.taterzens.util.TextUtil.translate;
 
 public class ProfessionsCommand {
 
@@ -88,7 +94,7 @@ public class ProfessionsCommand {
                 );
                 i.incrementAndGet();
             });
-            source.sendSuccess(() -> response, false);
+            source.sendSuccess(response, false);
         });
     }
 
@@ -97,7 +103,7 @@ public class ProfessionsCommand {
         return NpcCommand.selectedTaterzenExecutor(source.getEntityOrException(), taterzen -> {
             if(taterzen.getProfessionIds().contains(id)) {
                 taterzen.removeProfession(id);
-                source.sendSuccess(() -> successText("taterzens.command.profession.remove", id.toString()), false);
+                source.sendSuccess(successText("taterzens.command.profession.remove", id.toString()), false);
             } else
                 context.getSource().sendFailure(errorText("taterzens.command.profession.error.404", id.toString()));
         });
@@ -108,7 +114,7 @@ public class ProfessionsCommand {
         return NpcCommand.selectedTaterzenExecutor(source.getEntityOrException(), taterzen -> {
             if (PROFESSION_TYPES.containsKey(id)) {
                 taterzen.addProfession(id);
-                source.sendSuccess(() -> successText("taterzens.command.profession.add", id.toString()), false);
+                source.sendSuccess(successText("taterzens.command.profession.add", id.toString()), false);
             } else {
                 context.getSource().sendFailure(errorText("taterzens.command.profession.error.404", id.toString()));
             }
@@ -118,10 +124,9 @@ public class ProfessionsCommand {
     private static CompletableFuture<Suggestions> suggestRemovableProfessions(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
         Collection<ResourceLocation> professions = new HashSet<>();
         try {
-            Optional<TaterzenNPC> taterzen = ((ITaterzenEditor) ctx.getSource().getPlayerOrException()).getSelectedNpc();
-
-            if (taterzen.isPresent()) {
-                professions = taterzen.get().getProfessionIds();
+            TaterzenNPC taterzen = ((ITaterzenEditor) ctx.getSource().getPlayerOrException()).getNpc();
+            if(taterzen != null) {
+                professions = taterzen.getProfessionIds();
             }
         } catch(CommandSyntaxException ignored) {
         }

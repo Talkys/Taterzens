@@ -20,13 +20,23 @@ import org.samo_lego.taterzens.Taterzens;
 import org.samo_lego.taterzens.api.professions.TaterzenProfession;
 import org.samo_lego.taterzens.npc.TaterzenNPC;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-import static org.samo_lego.taterzens.Taterzens.*;
+import static org.samo_lego.taterzens.Taterzens.GSON;
+import static org.samo_lego.taterzens.Taterzens.LOGGER;
+import static org.samo_lego.taterzens.Taterzens.MOD_ID;
+import static org.samo_lego.taterzens.Taterzens.PROFESSION_TYPES;
 
 /**
  * Class containing static methods to use with Taterzens.
@@ -151,7 +161,7 @@ public class TaterzensAPI {
      * @return TaterzenNPC
      */
     public static TaterzenNPC createTaterzen(ServerPlayer owner, String displayName) {
-        return createTaterzen(owner.serverLevel(), displayName, owner.position(), new float[]{owner.yHeadRot, owner.getYRot(), owner.getXRot()});
+        return createTaterzen(owner.getLevel(), displayName, owner.position(), new float[]{owner.yHeadRot, owner.getYRot(), owner.getXRot()});
     }
 
     /**

@@ -4,7 +4,6 @@ import carpet.script.annotation.AnnotationParser;
 import carpet.script.annotation.ScarpetFunction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import org.jetbrains.annotations.Nullable;
 import org.samo_lego.taterzens.Taterzens;
 import org.samo_lego.taterzens.api.TaterzensAPI;
 import org.samo_lego.taterzens.interfaces.ITaterzenEditor;
@@ -30,7 +29,7 @@ public class AdditionalFunctions {
     @ScarpetFunction
     public Entity spawn_taterzen(ServerPlayer player, String name) {
         TaterzenNPC npc = TaterzensAPI.createTaterzen(player, name);
-        player.level().addFreshEntity(npc);
+        player.getLevel().addFreshEntity(npc);
         return npc;
     }
 
@@ -39,13 +38,9 @@ public class AdditionalFunctions {
      * @param player player to get taterzen from.
      * @return taterzen of player or null if player doesn't have taterzen selected.
      */
-    @Nullable
     @ScarpetFunction
     public Entity players_taterzen(ServerPlayer player) {
-        if (((ITaterzenEditor) player).getSelectedNpc().isPresent()) {
-            return ((ITaterzenEditor) player).getSelectedNpc().get();
-        }
-        return null;
+        return ((ITaterzenEditor) player).getNpc();
     }
 
     /**

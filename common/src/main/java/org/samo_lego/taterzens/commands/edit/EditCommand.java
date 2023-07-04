@@ -2,7 +2,6 @@ package org.samo_lego.taterzens.commands.edit;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.tree.LiteralCommandNode;
-import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import org.samo_lego.taterzens.commands.edit.commands.CommandsCommand;
 import org.samo_lego.taterzens.commands.edit.messages.MessagesCommand;
@@ -11,7 +10,7 @@ import static net.minecraft.commands.Commands.literal;
 
 public class EditCommand {
 
-    public static void registerNode(CommandDispatcher<CommandSourceStack> dispatcher, LiteralCommandNode<CommandSourceStack> npcNode, CommandBuildContext commandBuildContext) {
+    public static void registerNode(CommandDispatcher<CommandSourceStack> dispatcher, LiteralCommandNode<CommandSourceStack> npcNode) {
         LiteralCommandNode<CommandSourceStack> editNode = literal("edit")
                 .build();
 
@@ -32,6 +31,6 @@ public class EditCommand {
         SkinCommand.registerNode(editNode);
         SoundCommand.registerNode(editNode);
         TagsCommand.registerNode(editNode);
-        TypeCommand.registerNode(editNode, commandBuildContext);
+        TypeCommand.registerNode(editNode);
     }
 }

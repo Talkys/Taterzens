@@ -7,7 +7,6 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.minecraft.ChatFormatting;
-import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.MessageArgument;
@@ -25,10 +24,13 @@ import org.samo_lego.taterzens.Taterzens;
 import org.samo_lego.taterzens.api.TaterzensAPI;
 import org.samo_lego.taterzens.commands.edit.EditCommand;
 import org.samo_lego.taterzens.interfaces.ITaterzenEditor;
-import org.samo_lego.taterzens.mixin.accessors.ACommandSourceStack;
+import org.samo_lego.taterzens.mixin.accessors.CommandSourceStackAccessor;
 import org.samo_lego.taterzens.npc.TaterzenNPC;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
@@ -37,7 +39,9 @@ import static net.minecraft.commands.Commands.literal;
 import static net.minecraft.commands.arguments.MessageArgument.message;
 import static org.samo_lego.taterzens.Taterzens.TATERZEN_NPCS;
 import static org.samo_lego.taterzens.Taterzens.config;
-import static org.samo_lego.taterzens.util.TextUtil.*;
+import static org.samo_lego.taterzens.util.TextUtil.errorText;
+import static org.samo_lego.taterzens.util.TextUtil.successText;
+import static org.samo_lego.taterzens.util.TextUtil.translate;
 
 public class NpcCommand {
     public static LiteralCommandNode<CommandSourceStack> npcNode;
@@ -45,9 +49,9 @@ public class NpcCommand {
     private static final double MAX_DISTANCE = 8.02;
     private static final double SQRD_DIST = MAX_DISTANCE * MAX_DISTANCE;
 
-    public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext commandBuildContext) {
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         npcNode = dispatcher.register(literal("npc")
-                .requires(src -> Taterzens.getInstance().getPlatform().checkPermission(src, "taterzens.npc", config.perms.npcCommandPermissionLevel))
+                .requires(src -> Taterzens.getInstance().getPlatform().checkPermission(src,  "taterzens.npc", config.perms.npcCommandPermissionLevel))
                 .then(literal("create")
                         .requires(src -> Taterzens.getInstance().getPlatform().checkPermission(src, "taterzens.npc.create", config.perms.npcCommandPermissionLevel))
                         .then(argument("name", message())
@@ -95,7 +99,7 @@ public class NpcCommand {
                 )
         );
 
-        EditCommand.registerNode(dispatcher, npcNode, commandBuildContext);
+        EditCommand.registerNode(dispatcher, npcNode);
         PresetCommand.registerNode(npcNode);
         TeleportCommand.registerNode(npcNode);
         ActionCommand.registerNode(npcNode);
@@ -122,20 +126,15 @@ public class NpcCommand {
      * @return 1 if player has npc selected and predicate test passed, otherwise 0
      */
     public static int selectedTaterzenExecutor(@NotNull Entity entity, Consumer<TaterzenNPC> npcConsumer) {
-        Optional<TaterzenNPC> taterzen = Optional.empty();
-
-        if (entity instanceof ITaterzenEditor player) {
-            taterzen = player.getSelectedNpc();
-        } else if (entity instanceof TaterzenNPC taterzenNPC) {
-            taterzen = Optional.of(taterzenNPC);
-        }
-
-
-        if (taterzen.isPresent()) {
-            npcConsumer.accept(taterzen.get());
+        TaterzenNPC taterzen = null;
+        if(entity instanceof ITaterzenEditor player)
+            taterzen = player.getNpc();
+        else if(entity instanceof TaterzenNPC taterzenNPC)
+            taterzen = taterzenNPC;
+        if(taterzen != null) {
+            npcConsumer.accept(taterzen);
             return 1;
         }
-
         entity.sendSystemMessage(noSelectedTaterzenError());
         return 0;
     }
@@ -144,7 +143,7 @@ public class NpcCommand {
         CommandSourceStack source = context.getSource();
         ServerPlayer player = source.getPlayerOrException();
         ((ITaterzenEditor) player).selectNpc(null);
-        source.sendSuccess(() -> translate("taterzens.command.deselect").withStyle(ChatFormatting.GREEN), false);
+        source.sendSuccess(translate("taterzens.command.deselect").withStyle(ChatFormatting.GREEN), false);
         return 1;
     }
 
@@ -152,10 +151,10 @@ public class NpcCommand {
         CommandSourceStack source = context.getSource();
 
         boolean console = source.getEntity() == null;
-        Optional<TaterzenNPC> npc = Optional.empty();
+        TaterzenNPC npc = null;
 
         if (!console) {
-            npc = ((ITaterzenEditor) source.getPlayerOrException()).getSelectedNpc();
+            npc = ((ITaterzenEditor) source.getPlayerOrException()).getNpc();
         }
 
         MutableComponent response = translate("taterzens.command.list").withStyle(ChatFormatting.AQUA);
@@ -164,14 +163,14 @@ public class NpcCommand {
         for (var taterzenNPC : TATERZEN_NPCS.values()) {
             String name = taterzenNPC.getName().getString();
 
-            boolean sel = Optional.of(taterzenNPC).equals(npc);
+            boolean sel = taterzenNPC == npc;
 
             response.append(
                             Component.literal("\n" + i + "-> " + name)
                                     .withStyle(sel ? ChatFormatting.BOLD : ChatFormatting.RESET)
                                     .withStyle(sel ? ChatFormatting.GREEN : (i % 2 == 0 ? ChatFormatting.YELLOW : ChatFormatting.GOLD))
                                     .withStyle(style -> style
-                                            .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/npc select uuid " + taterzenNPC.getUUID()))
+                                            .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/npc select uuid " + taterzenNPC.getUUID().toString()))
                                             .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, translate(sel ? "taterzens.tooltip.current_selection" : "taterzens.tooltip.new_selection", name)))))
                     .append(
                             Component.literal(" (" + (console ? taterzenNPC.getStringUUID() : "uuid") + ")")
@@ -184,7 +183,7 @@ public class NpcCommand {
             ++i;
         }
 
-        source.sendSuccess(() -> response, false);
+        source.sendSuccess(response, false);
         return 1;
     }
 
@@ -202,16 +201,16 @@ public class NpcCommand {
         } else {
             TaterzenNPC taterzen = (TaterzenNPC) TATERZEN_NPCS.values().toArray()[id - 1];
             ServerPlayer player = source.getPlayerOrException();
-            Optional<TaterzenNPC> npc = ((ITaterzenEditor) player).getSelectedNpc();
+            TaterzenNPC npc = ((ITaterzenEditor) player).getNpc();
 
-            if (npc.isPresent()) {
+            if (npc != null) {
                 ((ITaterzenEditor) player).selectNpc(null);
             }
 
             boolean selected = ((ITaterzenEditor) player).selectNpc(taterzen);
             if (selected) {
-                source.sendSuccess(() ->
-                                successText("taterzens.command.select", taterzen.getName().getString()),
+                source.sendSuccess(
+                        successText("taterzens.command.select", taterzen.getName().getString()),
                         false
                 );
             } else {
@@ -259,15 +258,14 @@ public class NpcCommand {
             return 0;
         } else { // if count == 1
             ServerPlayer player = source.getPlayerOrException();
-            Optional<TaterzenNPC> npc = ((ITaterzenEditor) player).getSelectedNpc();
-            if (npc.isPresent()) {
+            TaterzenNPC npc = ((ITaterzenEditor) player).getNpc();
+            if (npc != null) {
                 ((ITaterzenEditor) player).selectNpc(null);
             }
             boolean selected = ((ITaterzenEditor) player).selectNpc(taterzen);
             if (selected) {
-                TaterzenNPC finalTaterzen = taterzen;
-                source.sendSuccess(() ->
-                                successText("taterzens.command.select", finalTaterzen.getName().getString()),
+                source.sendSuccess(
+                        successText("taterzens.command.select", taterzen.getName().getString()),
                         false
                 );
                 return 1;
@@ -302,14 +300,14 @@ public class NpcCommand {
             return 0;
         } else {
             ServerPlayer player = source.getPlayerOrException();
-            Optional<TaterzenNPC> npc = ((ITaterzenEditor) player).getSelectedNpc();
-            if (npc.isPresent()) {
+            TaterzenNPC npc = ((ITaterzenEditor) player).getNpc();
+            if (npc != null) {
                 ((ITaterzenEditor) player).selectNpc(null);
             }
             boolean selected = ((ITaterzenEditor) player).selectNpc(taterzen);
             if (selected) {
-                source.sendSuccess(() ->
-                                successText("taterzens.command.select", taterzen.getName().getString()),
+                source.sendSuccess(
+                        successText("taterzens.command.select", taterzen.getName().getString()),
                         false
                 );
                 return 1;
@@ -328,8 +326,8 @@ public class NpcCommand {
         ServerPlayer player = source.getPlayerOrException();
         return selectedTaterzenExecutor(player, taterzen -> {
             taterzen.kill();
-            source.sendSuccess(() ->
-                            successText("taterzens.command.remove", taterzen.getName().getString()),
+            source.sendSuccess(
+                    successText("taterzens.command.remove", taterzen.getName().getString()),
                     false
             );
             ((ITaterzenEditor) player).selectNpc(null);
@@ -353,8 +351,8 @@ public class NpcCommand {
             TaterzenNPC taterzen = (TaterzenNPC) hit.getEntity();
             boolean selected = ((ITaterzenEditor) player).selectNpc(taterzen);
             if (selected) {
-                source.sendSuccess(() ->
-                                successText("taterzens.command.select", taterzen.getName().getString()),
+                source.sendSuccess(
+                        successText("taterzens.command.select", taterzen.getName().getString()),
                         false
                 );
             } else {
@@ -385,28 +383,28 @@ public class NpcCommand {
         CommandSourceStack source = context.getSource();
         ServerPlayer player = source.getPlayerOrException();
 
-        Optional<TaterzenNPC> npc = ((ITaterzenEditor) player).getSelectedNpc();
-        if (npc.isPresent()) {
+        TaterzenNPC npc = ((ITaterzenEditor) player).getNpc();
+        if(npc != null) {
             ((ITaterzenEditor) player).selectNpc(null);
         }
 
         String taterzenName;
         try {
             taterzenName = MessageArgument.getMessage(context, "name").getString();
-        } catch (IllegalArgumentException ignored) {
+        } catch(IllegalArgumentException ignored) {
             // no name was provided, defaulting to player's own name
             taterzenName = player.getGameProfile().getName();
         }
 
         TaterzenNPC taterzen = TaterzensAPI.createTaterzen(player, taterzenName);
         // Making sure permission level is as high as owner's, to prevent permission bypassing.
-        taterzen.setPermissionLevel(((ACommandSourceStack) source).getPermissionLevel());
+        taterzen.setPermissionLevel(((CommandSourceStackAccessor) source).getPermissionLevel());
 
         // Lock if needed
         if (config.lockAfterCreation)
             taterzen.setLocked(player);
 
-        player.level().addFreshEntity(taterzen);
+        player.getLevel().addFreshEntity(taterzen);
 
         ((ITaterzenEditor) player).selectNpc(taterzen);
         player.sendSystemMessage(successText("taterzens.command.create", taterzen.getName().getString()));

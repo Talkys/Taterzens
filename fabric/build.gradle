@@ -1,38 +1,140 @@
-def ENV = System.getenv()
+import com.modrinth.minotaur.TaskModrinthUpload
+
+plugins {
+    id "com.github.johnrengelman.shadow" version "7.0.0"
+    id 'com.matthewprenger.cursegradle'
+    id "com.modrinth.minotaur"
+    // Dokka docs
+    id "org.jetbrains.kotlin.jvm"
+    id("org.jetbrains.dokka")
+}
+
+repositories {
+    maven {
+        url 'https://oss.sonatype.org/content/repositories/snapshots'
+    }
+    maven {
+        url 'https://masa.dy.fi/maven'
+    }
+}
+
+architectury {
+    platformSetupLoomIde()
+    fabric()
+}
+
+configurations {
+    common
+    shadowCommon // Don't use shadow from the shadow plugin because we don't want IDEA to index this.
+    compileClasspath.extendsFrom common
+    runtimeClasspath.extendsFrom common
+    developmentFabric.extendsFrom common
+
+}
+
+def ENV = System.getenv();
 
 dependencies {
-    // Carpet
-    modCompileOnly("com.github.gnembon:fabric-carpet:${project.carpet_core_version}")
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_version}"
 
-    // Patbox's library for registry sync manipulation
-    modImplementation include("eu.pb4:polymer-reg-sync-manipulator:${project.polymer_registry_sync_version}")
+    // C2B
+    //modImplementation(include("libs/config2brigadier-fabric.jar"))
 
     // Permission API
     modImplementation(include('me.lucko:fabric-permissions-api:0.1-SNAPSHOT'))
 
     // Server translations
-    modImplementation include("xyz.nucleoid:server-translations-api:${project.translations_api}")
+    modImplementation include("fr.catcore:server-translations-api:${project.translations_api}")
 
     // SGUI
-    modImplementation(include("eu.pb4:sgui:${project.sgui_version}"))
+    modImplementation(include("eu.pb4:sgui:${rootProject.sgui_version}"))
 
-    // C2B
-    include("com.github.samolego.Config2Brigadier:config2brigadier-fabric:${rootProject.c2b_version}")
+    // Carpet
+    //modImplementation("carpet:fabric-carpet:${rootProject.minecraft_version}-${project.carpet_core_version}")
+    //modCompileOnly("carpet:fabric-carpet:1.18-pre4-${project.carpet_core_version}")
+    // Masa's maven is down atm
+    modCompileOnly("com.github.gnembon:fabric-carpet:${project.carpet_core_version}")
 
-    // Disguiselib
-    modImplementation("xyz.nucleoid:disguiselib-fabric:${project.disguiselib_version}")
+    common(project(path: ":common", configuration: "namedElements")) { transitive false }
+    shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
 }
 
 processResources {
-    inputs.property "version", rootProject.version
+    inputs.property "version", project.version
 
     filesMatching("fabric.mod.json") {
-        expand "version": rootProject.version
-    }
-    filesMatching("taterzens.common.mixins.json") {
-        expand "refmap": "taterzens-${project.name}-${rootProject.minecraft_version}-refmap.json"
+        expand "version": project.version
     }
 }
+
+shadowJar {
+    configurations = [project.configurations.shadowCommon]
+    classifier "dev-shadow"
+}
+
+remapJar {
+    input.set shadowJar.archiveFile
+    dependsOn shadowJar
+    classifier "fabric"
+}
+
+jar {
+    classifier "dev"
+}
+
+sourcesJar {
+    def commonSources = project(":common").sourcesJar
+    dependsOn commonSources
+    from commonSources.archiveFile.map { zipTree(it) }
+}
+
+components.java {
+    withVariantsFromConfiguration(project.configurations.shadowRuntimeElements) {
+        skip()
+    }
+}
+
+publishing {
+    publications {
+        mavenFabric(MavenPublication) {
+            artifactId = rootProject.archives_base_name + "-" + project.name
+            from components.java
+        }
+        mavenJava(MavenPublication) {
+            artifactId = rootProject.archives_base_name + "-" + project.name
+            // add all the jars that should be included when publishing to maven
+            artifact(remapJar) {
+                classifier null
+            }
+            artifact(sourcesJar) {
+                builtBy remapSourcesJar
+            }
+        }
+    }
+
+    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/samolego/Taterzens")
+            credentials {
+                username = ENV.USERNAME
+                password = ENV.PASSWORD
+            }
+        }
+        // uncomment to publish to the local maven
+        mavenLocal()
+    }
+
+}
+
+tasks.withType(dokkaHtmlPartial.getClass()).configureEach {
+    pluginsMapConfiguration.set(
+            ["org.jetbrains.dokka.base.DokkaBase": """{ "separateInheritedMembers": true}"""]
+    )
+}
+
 
 // from FAPI https://github.com/FabricMC/fabric/blob/1.16/build.gradle
 curseforge {
@@ -46,7 +148,6 @@ curseforge {
         releaseType = "release"
         addGameVersion "${project.minecraft_version}"
         addGameVersion "Fabric"
-        addGameVersion "Quilt"
 
         mainArtifact(file("${project.buildDir}/libs/${archivesBaseName}-${version}-fabric.jar")) {
             displayName = "[${project.minecraft_version}] Taterzens ${version}"
@@ -62,20 +163,20 @@ curseforge {
     }
 }
 
-modrinth {
+task modrinth(type: TaskModrinthUpload, dependsOn: remapJar) {
+    onlyIf {
+        ENV.MODRINTH_TOKEN
+    }
+
     token = ENV.MODRINTH_TOKEN
     projectId = "vE972Kux"
     versionNumber = project.minecraft_version + "+" + version + "-fabric"
-    versionType = "release"
     changelog = ENV.CHANGELOG ?: "A changelog can be found at https://github.com/samolego/Taterzens/releases/tag/${version}"
     versionName = "[${project.minecraft_version}] Taterzens ${version} [Fabric]"
+    releaseType = "release"
 
     uploadFile = file("${project.buildDir}/libs/${archivesBaseName}-${version}-fabric.jar")
 
-    gameVersions = ["${project.minecraft_version}"]
-    loaders = ['fabric', 'quilt']
-
-    dependencies { // A special DSL for creating dependencies
-        required.project "fabric-api" // Creates a new required dependency on Fabric API
-    }
+    addGameVersion("${project.minecraft_version}")
+    addLoader('fabric')
 }

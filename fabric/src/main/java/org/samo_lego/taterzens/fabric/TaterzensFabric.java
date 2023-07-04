@@ -1,13 +1,12 @@
 package org.samo_lego.taterzens.fabric;
 
-import eu.pb4.polymer.rsm.api.RegistrySyncUtils;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
-import net.minecraft.core.registries.BuiltInRegistries;
 import org.samo_lego.taterzens.Taterzens;
-import org.samo_lego.taterzens.fabric.commands.MessagesReorderCommand;
+import org.samo_lego.taterzens.api.TaterzensAPI;
+import org.samo_lego.taterzens.commands.edit.messages.MessagesReorderCommand;
 import org.samo_lego.taterzens.fabric.compatibility.carpet.AdditionalFunctions;
 import org.samo_lego.taterzens.fabric.compatibility.carpet.ScarpetProfession;
 import org.samo_lego.taterzens.fabric.compatibility.carpet.ScarpetTraitCommand;
@@ -29,21 +28,17 @@ public class TaterzensFabric implements ModInitializer {
 
         // CarpetMod
         if (CARPETMOD_LOADED) {
+            TaterzensAPI.registerProfession(ScarpetProfession.ID, ScarpetProfession::new);
             AdditionalFunctions.init();
         }
 
         // Events
         CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> {
-            Taterzens.registerCommands(dispatcher, context);
+            Taterzens.registerCommands(dispatcher);
             MessagesReorderCommand.register(dispatcher);
-            if (CARPETMOD_LOADED) {
-                ScarpetTraitCommand.register(); // also registers profession on first init
-            }
+            ScarpetTraitCommand.register();
         });
 
         UseBlockCallback.EVENT.register(new BlockInteractEventImpl());
-
-        // Mark as server-only registry entry
-        RegistrySyncUtils.setServerEntry(BuiltInRegistries.ENTITY_TYPE, TATERZEN_TYPE.get());
     }
 }

@@ -18,7 +18,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.apache.logging.log4j.LogManager.getLogger;
-import static org.samo_lego.taterzens.Taterzens.*;
+import static org.samo_lego.taterzens.Taterzens.GSON;
+import static org.samo_lego.taterzens.Taterzens.config;
+import static org.samo_lego.taterzens.Taterzens.lang;
 
 public class LanguageUtil {
 
@@ -92,9 +94,8 @@ public class LanguageUtil {
                     JsonObject file = element.getAsJsonObject();
 
                     String langName = file.get("name").getAsString();
-                    if (langName.endsWith(ending)) {
+                    if(langName.endsWith(ending))
                         LANG_LIST.add(langName.substring(0, langName.length() - ending.length()));
-                    }
                 }
             }
             conn.disconnect();

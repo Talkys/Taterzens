@@ -15,10 +15,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import org.samo_lego.taterzens.Taterzens;
-import org.samo_lego.taterzens.api.TaterzensAPI;
 import org.samo_lego.taterzens.api.professions.TaterzenProfession;
 import org.samo_lego.taterzens.commands.NpcCommand;
 import org.samo_lego.taterzens.interfaces.ITaterzenEditor;
+import org.samo_lego.taterzens.npc.TaterzenNPC;
 
 import java.util.HashSet;
 import java.util.concurrent.CompletableFuture;
@@ -28,16 +28,16 @@ import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 import static org.samo_lego.taterzens.Taterzens.config;
 import static org.samo_lego.taterzens.commands.ProfessionCommand.PROFESSION_COMMAND_NODE;
-import static org.samo_lego.taterzens.util.TextUtil.*;
+import static org.samo_lego.taterzens.compatibility.ModDiscovery.CARPETMOD_LOADED;
+import static org.samo_lego.taterzens.util.TextUtil.errorText;
+import static org.samo_lego.taterzens.util.TextUtil.joinText;
+import static org.samo_lego.taterzens.util.TextUtil.successText;
+import static org.samo_lego.taterzens.util.TextUtil.translate;
 
 public class ScarpetTraitCommand {
-    static {
-        TaterzensAPI.registerProfession(ScarpetProfession.ID, ScarpetProfession::new);
-    }
-
     public static void register() {
         LiteralCommandNode<CommandSourceStack> scarpet = literal("scarpetTraits")
-                .requires(src -> Taterzens.getInstance().getPlatform().checkPermission(src, "taterzens.profession.scarpet", config.perms.professionCommandPL))
+                .requires(src -> CARPETMOD_LOADED && Taterzens.getInstance().getPlatform().checkPermission(src, "taterzens.profession.scarpet", config.perms.professionCommandPL))
                 .then(literal("add")
                         .requires(src -> Taterzens.getInstance().getPlatform().checkPermission(src, "taterzens.profession.scarpet.add", config.perms.professionCommandPL))
                         .then(argument("id", StringArgumentType.word())
@@ -92,7 +92,7 @@ public class ScarpetTraitCommand {
                     );
                     i.incrementAndGet();
                 });
-                source.sendSuccess(() -> response, false);
+                source.sendSuccess(response, false);
             } else {
                 source.sendFailure(errorText("taterzens.profession.lacking", ScarpetProfession.ID.toString()));
             }
@@ -106,7 +106,7 @@ public class ScarpetTraitCommand {
             TaterzenProfession profession = taterzen.getProfession(ScarpetProfession.ID);
             if (profession instanceof ScarpetProfession scarpetProfession) {
                 if (scarpetProfession.removeTrait(id))
-                    source.sendSuccess(() -> successText("taterzens.command.trait.remove", id), false);
+                    source.sendSuccess(successText("taterzens.command.trait.remove", id), false);
                 else
                     context.getSource().sendFailure(errorText("taterzens.command.trait.error.404", id));
             } else {
@@ -122,7 +122,7 @@ public class ScarpetTraitCommand {
             TaterzenProfession profession = taterzen.getProfession(ScarpetProfession.ID);
             if (profession instanceof ScarpetProfession scarpetProfession) {
                 scarpetProfession.addTrait(id);
-                source.sendSuccess(() -> successText("taterzens.command.trait.add", id), false);
+                source.sendSuccess(successText("taterzens.command.trait.add", id), false);
             } else {
                 source.sendFailure(errorText("taterzens.profession.lacking", ScarpetProfession.ID.toString()));
             }
@@ -132,13 +132,11 @@ public class ScarpetTraitCommand {
     private static CompletableFuture<Suggestions> suggestRemovableTraits(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
         HashSet<Value> traits = new HashSet<>();
         try {
-            var taterzen = ((ITaterzenEditor) ctx.getSource().getPlayerOrException()).getSelectedNpc();
-
-            if (taterzen.isPresent() && taterzen.get().getProfession(ScarpetProfession.ID) instanceof ScarpetProfession scarpetProfession) {
+            TaterzenNPC taterzen = ((ITaterzenEditor) ctx.getSource().getPlayerOrException()).getNpc();
+            if(taterzen != null && taterzen.getProfession(ScarpetProfession.ID) instanceof ScarpetProfession scarpetProfession) {
                 traits = scarpetProfession.getTraits();
             }
         } catch(CommandSyntaxException ignored) { }
-
         return SharedSuggestionProvider.suggest(traits.stream().map(Value::getPrettyString), builder);
     }
 }

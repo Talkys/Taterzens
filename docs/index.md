@@ -1,9 +1,9 @@
 ---
-template: head.html
+template: home.html
 title: ""
 ---
 
-![banner](../overrides/assets/img/banner.svg)
+![banner](./assets/img/banner.svg)
 
 *An NPC / Citizen-like mod for Fabric / Forge modloader.*
 

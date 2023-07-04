@@ -40,16 +40,18 @@ https://user-images.githubusercontent.com/34912839/142493879-6f642eb1-e226-4798-
 
 **Warning!**
 
-Taterzens mod uses **official mojang mappings.**
+Taterzens mod uses **[ParchmentMC](https://parchmentmc.org/) mappings.**
 If you're a [Yarn](https://github.com/FabricMC/yarn) contributor, you might **not want** to see the source!
 
 ### Dependency
 Add `jitpack.io` maven repository.
 ```gradle
 repositories {
-    maven { url 'https://jitpack.io' }  // Taterzens itself
-    maven { url 'https://maven.nucleoid.xyz' }  // Nucleoid (good stuff)
-    maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }  // Permission API
+    maven { url 'https://jitpack.io' }
+    maven {
+        // LuckPerms maven
+        url 'https://oss.sonatype.org/content/repositories/snapshots'
+    }
 }
 ```
 

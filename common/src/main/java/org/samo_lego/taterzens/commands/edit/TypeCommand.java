@@ -4,11 +4,9 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.minecraft.ChatFormatting;
-import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.CompoundTagArgument;
-import net.minecraft.commands.arguments.ResourceArgument;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.commands.arguments.EntitySummonArgument;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
@@ -28,10 +26,10 @@ import static org.samo_lego.taterzens.util.TextUtil.successText;
 import static org.samo_lego.taterzens.util.TextUtil.translate;
 
 public class TypeCommand {
-    public static void registerNode(LiteralCommandNode<CommandSourceStack> editNode, CommandBuildContext commandBuildContext) {
+    public static void registerNode(LiteralCommandNode<CommandSourceStack> editNode) {
         LiteralCommandNode<CommandSourceStack> typeNode = literal("type")
                 .requires(src -> Taterzens.getInstance().getPlatform().checkPermission(src, "taterzens.npc.edit.entity_type", config.perms.npcCommandPermissionLevel))
-                .then(argument("entity type", ResourceArgument.resource(commandBuildContext, Registries.ENTITY_TYPE))
+                .then(argument("entity type", EntitySummonArgument.id())
                         .suggests(SUMMONABLE_ENTITIES)
                         .executes(TypeCommand::changeType)
                         .then(argument("nbt", CompoundTagArgument.compoundTag())
@@ -68,7 +66,7 @@ public class TypeCommand {
             return -1;
         }
 
-        ResourceLocation disguise = ResourceArgument.getSummonableEntityType(context, "entity type").key().location();
+        ResourceLocation disguise = EntitySummonArgument.getSummonableEntity(context, "entity type");
         return NpcCommand.selectedTaterzenExecutor(source.getEntityOrException(), taterzen -> {
             CompoundTag nbt;
             try {
@@ -80,11 +78,11 @@ public class TypeCommand {
 
             EntityType.loadEntityRecursive(nbt, source.getLevel(), (entityx) -> {
                 DisguiseLibCompatibility.disguiseAs(taterzen, entityx);
-                source.sendSuccess(() ->
-                                translate(
-                                        "taterzens.command.entity_type.set",
-                                        Component.translatable(entityx.getType().getDescriptionId()).withStyle(ChatFormatting.YELLOW)
-                                ).withStyle(ChatFormatting.GREEN),
+                source.sendSuccess(
+                        translate(
+                                "taterzens.command.entity_type.set",
+                                Component.translatable(entityx.getType().getDescriptionId()).withStyle(ChatFormatting.YELLOW)
+                        ).withStyle(ChatFormatting.GREEN),
                         false
                 );
                 return entityx;
@@ -106,8 +104,8 @@ public class TypeCommand {
         }
         return NpcCommand.selectedTaterzenExecutor(source.getEntityOrException(), taterzen -> {
             DisguiseLibCompatibility.clearDisguise(taterzen);
-            source.sendSuccess(() ->
-                            successText("taterzens.command.entity_type.reset", taterzen.getName().getString()),
+            source.sendSuccess(
+                    successText("taterzens.command.entity_type.reset", taterzen.getName().getString()),
                     false
             );
         });

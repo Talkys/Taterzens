@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.mojang.brigadier.CommandDispatcher;
-import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
@@ -20,11 +19,18 @@ import org.samo_lego.taterzens.npc.TaterzenNPC;
 import org.samo_lego.taterzens.platform.Platform;
 import org.samo_lego.taterzens.storage.TaterConfig;
 import org.samo_lego.taterzens.util.LanguageUtil;
+import org.samo_lego.taterzens.util.PermissionExtractor;
 
 import java.io.File;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import static org.samo_lego.taterzens.compatibility.ModDiscovery.LUCKPERMS_LOADED;
 
 public class Taterzens {
 
@@ -75,9 +81,8 @@ public class Taterzens {
         this.presetsDir = new File(platform.getConfigDirPath() + "/Taterzens/presets");
         this.platform = platform;
 
-        if (!presetsDir.exists() && !presetsDir.mkdirs()) {
+        if (!presetsDir.exists() && !presetsDir.mkdirs())
             throw new RuntimeException(String.format("[%s] Error creating directory!", MOD_ID));
-        }
 
         File taterDir = presetsDir.getParentFile();
         configFile = new File(taterDir + "/config.json");
@@ -85,6 +90,9 @@ public class Taterzens {
 
         LanguageUtil.setupLanguage();
 
+        if(LUCKPERMS_LOADED && config.perms.savePermsFile) {
+            PermissionExtractor.extractPermissionsFile(new File(taterDir + "/permissions.toml"));
+        }
     }
 
     /**
@@ -121,12 +129,10 @@ public class Taterzens {
 
     /**
      * Handles command registration.
-     *
      * @param dispatcher dispatcher to register commands to.
-     * @param context
      */
-    public static void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext context) {
-        NpcCommand.register(dispatcher, context);
+    public static void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
+        NpcCommand.register(dispatcher);
         TaterzensCommand.register(dispatcher);
         NpcGUICommand.register(dispatcher);
 

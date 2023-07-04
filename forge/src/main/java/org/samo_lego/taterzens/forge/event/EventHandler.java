@@ -1,5 +1,7 @@
 package org.samo_lego.taterzens.forge.event;
 
+import com.mojang.brigadier.CommandDispatcher;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -15,7 +17,9 @@ import static org.samo_lego.taterzens.Taterzens.MOD_ID;
 import static org.samo_lego.taterzens.Taterzens.TATERZEN_TYPE;
 
 @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public record EventHandler() {
+public class EventHandler {
+    public EventHandler() {
+    }
 
     @SubscribeEvent
     public static void onBlockInteract(PlayerInteractEvent.RightClickBlock event) {
@@ -27,7 +31,8 @@ public record EventHandler() {
 
     @SubscribeEvent
     public void registerCommands(RegisterCommandsEvent event) {
-        Taterzens.registerCommands(event.getDispatcher(), event.getBuildContext());
+        CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
+        Taterzens.registerCommands(dispatcher);
     }
 
     @SubscribeEvent

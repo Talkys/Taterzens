@@ -23,7 +23,9 @@ import static org.samo_lego.taterzens.Taterzens.MOD_ID;
 import static org.samo_lego.taterzens.Taterzens.config;
 import static org.samo_lego.taterzens.compatibility.ModDiscovery.SERVER_TRANSLATIONS_LOADED;
 import static org.samo_lego.taterzens.util.LanguageUtil.LANG_LIST;
-import static org.samo_lego.taterzens.util.TextUtil.*;
+import static org.samo_lego.taterzens.util.TextUtil.errorText;
+import static org.samo_lego.taterzens.util.TextUtil.successText;
+import static org.samo_lego.taterzens.util.TextUtil.translate;
 
 public class TaterzensCommand {
     private static final SuggestionProvider<CommandSourceStack> AVAILABLE_LANGUAGES;
@@ -80,10 +82,10 @@ public class TaterzensCommand {
             config.save();
 
             LanguageUtil.setupLanguage();
-            source.sendSuccess(() -> successText("taterzens.command.language.success", language), false);
-            if (SERVER_TRANSLATIONS_LOADED) {
-                source.sendSuccess(() -> successText("taterzens.command.language.server_translations_hint.1"), false);
-                source.sendSuccess(() -> successText("taterzens.command.language.server_translations_hint.2"), false);
+            source.sendSuccess(successText("taterzens.command.language.success", language), false);
+            if(SERVER_TRANSLATIONS_LOADED) {
+                source.sendSuccess(successText("taterzens.command.language.server_translations_hint.1"), false);
+                source.sendSuccess(successText("taterzens.command.language.server_translations_hint.2"), false);
             }
 
         } else {
@@ -100,13 +102,13 @@ public class TaterzensCommand {
     }
 
     private static int wikiInfo(CommandContext<CommandSourceStack> context) {
-        context.getSource().sendSuccess(() ->
-                        successText("taterzens.command.wiki", DOCS_URL)
-                                .withStyle(ChatFormatting.GREEN)
-                                .withStyle(style -> style
-                                        .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, DOCS_URL))
-                                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, translate("taterzens.tooltip.see_docs")))
-                                ),
+        context.getSource().sendSuccess(
+                successText("taterzens.command.wiki", DOCS_URL)
+                        .withStyle(ChatFormatting.GREEN)
+                        .withStyle(style -> style
+                                .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, DOCS_URL))
+                                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, translate("taterzens.tooltip.see_docs")))
+                        ),
                 false
         );
         return 1;
@@ -115,8 +117,8 @@ public class TaterzensCommand {
     private static int reloadConfig(CommandContext<CommandSourceStack> context) {
         reloadConfig();
 
-        context.getSource().sendSuccess(() ->
-                        translate("taterzens.command.config.success").withStyle(ChatFormatting.GREEN),
+        context.getSource().sendSuccess(
+                translate("taterzens.command.config.success").withStyle(ChatFormatting.GREEN),
                 false
         );
         return 1;

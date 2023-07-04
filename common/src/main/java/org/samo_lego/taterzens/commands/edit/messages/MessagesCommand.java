@@ -23,7 +23,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 import static org.samo_lego.taterzens.Taterzens.config;
-import static org.samo_lego.taterzens.util.TextUtil.*;
+import static org.samo_lego.taterzens.util.TextUtil.errorText;
+import static org.samo_lego.taterzens.util.TextUtil.joinText;
+import static org.samo_lego.taterzens.util.TextUtil.successText;
+import static org.samo_lego.taterzens.util.TextUtil.translate;
 
 public class MessagesCommand {
     public static LiteralCommandNode<CommandSourceStack> messagesNode;
@@ -99,7 +102,7 @@ public class MessagesCommand {
             messages.add(firstId, second);
             messages.add(secondId, first);
 
-            source.sendSuccess(() -> translate("taterzens.command.message.swapped",
+            source.sendSuccess(translate("taterzens.command.message.swapped",
                     first.getFirst().copy().withStyle(ChatFormatting.YELLOW),
                     second.getFirst().copy().withStyle(ChatFormatting.YELLOW)
             ).withStyle(ChatFormatting.GREEN), false);
@@ -122,7 +125,7 @@ public class MessagesCommand {
                         errorText("taterzens.command.message.error.404", String.valueOf(selected))
                 );
             } else {
-                source.sendSuccess(() -> successText("taterzens.command.message.deleted", taterzen.removeMessage(actual).getString()), false);
+                source.sendSuccess(successText("taterzens.command.message.deleted", taterzen.removeMessage(actual).getString()), false);
             }
         });
     }
@@ -147,7 +150,7 @@ public class MessagesCommand {
                 String first = messages.get(i).getFirst().getString();
                 String second = messages.get(actual).getFirst().getString();
                 taterzen.setMessageDelay(actual, delay);
-                source.sendSuccess(() -> successText("taterzens.command.message.delay", first, second, String.valueOf(delay)), false);
+                source.sendSuccess(successText("taterzens.command.message.delay", first, second, String.valueOf(delay)), false);
             }
         });
     }
@@ -177,14 +180,14 @@ public class MessagesCommand {
             ((ITaterzenEditor) player).setEditorMode(ITaterzenEditor.EditorMode.MESSAGES);
             int selected = IntegerArgumentType.getInteger(context, "message id") - 1;
             if(selected >= taterzen.getMessages().size()) {
-                source.sendSuccess(() ->
-                                successText("taterzens.command.message.list", String.valueOf(selected)),
+                source.sendSuccess(
+                        successText("taterzens.command.message.list", String.valueOf(selected)),
                         false
                 );
             } else {
                 ((ITaterzenEditor) player).setEditingMessageIndex(selected);
-                source.sendSuccess(() ->
-                                successText("taterzens.command.message.editor.enter", taterzen.getMessages().get(selected).getFirst().getString()),
+                source.sendSuccess(
+                        successText("taterzens.command.message.editor.enter", taterzen.getMessages().get(selected).getFirst().getString()),
                         false)
                 ;
             }
@@ -222,7 +225,7 @@ public class MessagesCommand {
                         );
                 i.incrementAndGet();
             });
-            source.sendSuccess(() -> response, false);
+            source.sendSuccess(response, false);
         });
     }
 
@@ -230,7 +233,7 @@ public class MessagesCommand {
         CommandSourceStack source = context.getSource();
         return NpcCommand.selectedTaterzenExecutor(source.getEntityOrException(), taterzen -> {
             taterzen.clearMessages();
-            source.sendSuccess(() -> successText("taterzens.command.message.clear", taterzen.getName().getString()), false);
+            source.sendSuccess(successText("taterzens.command.message.clear", taterzen.getName().getString()), false);
         });
     }
 
@@ -242,27 +245,27 @@ public class MessagesCommand {
                 // Exiting the message edit mode
                 ((ITaterzenEditor) player).setEditorMode(ITaterzenEditor.EditorMode.NONE);
                 ((ITaterzenEditor) player).setEditingMessageIndex(-1);
-                source.sendSuccess(() ->
-                                translate("taterzens.command.equipment.exit").withStyle(ChatFormatting.LIGHT_PURPLE),
+                source.sendSuccess(
+                        translate("taterzens.command.equipment.exit").withStyle(ChatFormatting.LIGHT_PURPLE),
                         false
                 );
             } else {
                 // Entering the edit mode
                 ((ITaterzenEditor) player).setEditorMode(ITaterzenEditor.EditorMode.MESSAGES);
-                source.sendSuccess(() ->
-                                joinText("taterzens.command.message.editor.enter", ChatFormatting.LIGHT_PURPLE, ChatFormatting.AQUA, taterzen.getName().getString())
-                                        .withStyle(ChatFormatting.BOLD)
-                                        .withStyle(style -> style
-                                                .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/npc edit messages"))
-                                                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, translate("taterzens.tooltip.exit").withStyle(ChatFormatting.RED)))
-                                        ),
+                source.sendSuccess(
+                        joinText("taterzens.command.message.editor.enter", ChatFormatting.LIGHT_PURPLE, ChatFormatting.AQUA, taterzen.getName().getString())
+                                .withStyle(ChatFormatting.BOLD)
+                                .withStyle(style -> style
+                                        .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/npc edit messages"))
+                                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, translate("taterzens.tooltip.exit").withStyle(ChatFormatting.RED)))
+                                ),
                         false
                 );
-                source.sendSuccess(() ->
-                                successText("taterzens.command.message.editor.desc.1", taterzen.getName().getString())
-                                        .append("\n")
-                                        .append(translate("taterzens.command.message.editor.desc.2"))
-                                        .withStyle(ChatFormatting.GREEN),
+                source.sendSuccess(
+                        successText("taterzens.command.message.editor.desc.1", taterzen.getName().getString())
+                                .append("\n")
+                                .append(translate("taterzens.command.message.editor.desc.2"))
+                                .withStyle(ChatFormatting.GREEN),
                         false
                 );
             }

@@ -28,6 +28,7 @@ public class TaterConfig implements IBrigadierConfigurator {
     public final String _comment_language = "";
     /**
      * Language file used by Taterzens.
+     *
      * Located at $minecraftFolder/config/Taterzens/$lang.json
      */
     @BrigadierExcluded
@@ -117,9 +118,18 @@ public class TaterConfig implements IBrigadierConfigurator {
     }
 
     /**
-     * Permission stuff.
+     * Some permission stuff.
+     * If you are looking for permission nodes,
+     * see the generated permission.toml file.
+     *
+     * (You must have LuckPerms installed for it to generate.)
      */
     public static class Permissions {
+        @SerializedName("// Whether to save all permissions into permissions.toml file if LuckPerms is loaded.")
+        public final String _comment_savePermsFile = "";
+        @SerializedName("save_permissions_file")
+        public boolean savePermsFile = true;
+
         @SerializedName("// Permission level required to execute /npc command.")
         public final String _comment_npcCommandPermissionLevel0 = "";
         @SerializedName("// Valid only if LuckPerms isn't present.")

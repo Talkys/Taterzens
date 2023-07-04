@@ -27,8 +27,10 @@ import static net.minecraft.commands.arguments.MessageArgument.message;
 import static org.samo_lego.taterzens.Taterzens.GSON;
 import static org.samo_lego.taterzens.Taterzens.config;
 import static org.samo_lego.taterzens.compatibility.ModDiscovery.FABRICTAILOR_LOADED;
-import static org.samo_lego.taterzens.mixin.accessors.APlayer.getPLAYER_MODE_CUSTOMISATION;
-import static org.samo_lego.taterzens.util.TextUtil.*;
+import static org.samo_lego.taterzens.mixin.accessors.PlayerAccessor.getPLAYER_MODE_CUSTOMISATION;
+import static org.samo_lego.taterzens.util.TextUtil.errorText;
+import static org.samo_lego.taterzens.util.TextUtil.successText;
+import static org.samo_lego.taterzens.util.TextUtil.translate;
 import static org.samo_lego.taterzens.util.WebUtil.urlRequest;
 
 public class SkinCommand {
@@ -41,7 +43,7 @@ public class SkinCommand {
     public static void registerNode(LiteralCommandNode<CommandSourceStack> editNode) {
         LiteralCommandNode<CommandSourceStack> skinNode = literal("skin")
                 .requires(src -> Taterzens.getInstance().getPlatform().checkPermission(src, "taterzens.npc.edit.skin", config.perms.npcCommandPermissionLevel))
-                .then(argument("mineskin|player", message())
+                .then(argument("mineskin URL | playername", message())
                         .executes(SkinCommand::setCustomSkin)
                 )
                 .executes(SkinCommand::copySkinLayers)
@@ -52,14 +54,14 @@ public class SkinCommand {
 
     private static int setCustomSkin(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
-        String id = MessageArgument.getMessage(context, "mineskin|player").getString();
+        String id = MessageArgument.getMessage(context, "mineskin URL | playername").getString();
         Entity entity = source.getEntityOrException();
 
         return NpcCommand.selectedTaterzenExecutor(entity, taterzen -> {
             // Shameless self-promotion
             if(config.fabricTailorAdvert) {
                 if(FABRICTAILOR_LOADED) {
-                    source.sendSuccess(() -> translate("advert.fabrictailor.skin_command")
+                    source.sendSuccess(translate("advert.fabrictailor.skin_command")
                                     .withStyle(ChatFormatting.GOLD)
                                     .withStyle(style ->
                                             style.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/skin set"))
@@ -67,7 +69,7 @@ public class SkinCommand {
                             false
                     );
                 } else {
-                    source.sendSuccess(() -> translate("advert.fabrictailor")
+                    source.sendSuccess(translate("advert.fabrictailor")
                                     .withStyle(ChatFormatting.ITALIC)
                                     .withStyle(ChatFormatting.GOLD)
                                     .withStyle(style -> style
@@ -123,8 +125,8 @@ public class SkinCommand {
                                 taterzen.sendProfileUpdates();
 
 
-                                context.getSource().sendSuccess(() ->
-                                                successText("taterzens.command.skin.fetched", id),
+                                context.getSource().sendSuccess(
+                                        successText("taterzens.command.skin.fetched", id),
                                         false
                                 );
                             }
@@ -148,8 +150,8 @@ public class SkinCommand {
             taterzen.setSkinLayers(skinLayers);
 
             taterzen.sendProfileUpdates();
-            source.sendSuccess(() ->
-                            successText("taterzens.command.skin.mirrored", taterzen.getName().getString()),
+            source.sendSuccess(
+                    successText("taterzens.command.skin.mirrored", taterzen.getName().getString()),
                     false
             );
         });
