@@ -10,8 +10,4 @@ pluginManagement {
 
 include("common")
 include("fabric")
-
-// Include only if "enable_forge" in gradle.properties is true
-if (enable_forge.toBoolean()) {
-    include("forge")
-}
+include("forge")

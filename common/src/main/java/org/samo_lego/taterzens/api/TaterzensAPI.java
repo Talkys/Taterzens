@@ -142,11 +142,18 @@ public class TaterzensAPI {
      * @return TaterzenNPC
      */
     public static TaterzenNPC createTaterzen(ServerLevel world, String displayName, Vec3 pos, float[] rotations) {
+
+        LOGGER.log(org.apache.logging.log4j.Level.INFO,"Creating NPC");
         TaterzenNPC taterzen = new TaterzenNPC(world);
+
+
+        LOGGER.log(org.apache.logging.log4j.Level.INFO,taterzen.getName().toString());
 
         taterzen.moveTo(pos.x(), pos.y(), pos.z(), rotations[1], rotations[2]);
         taterzen.setYHeadRot(rotations[0]);
         taterzen.setCustomName(Component.literal(displayName));
+
+        LOGGER.log(org.apache.logging.log4j.Level.INFO,"Apply Skin: "+taterzen.getGameProfile());
         SkullBlockEntity.updateGameprofile(taterzen.getGameProfile(), taterzen::applySkin);
 
         return taterzen;

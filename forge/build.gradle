@@ -34,11 +34,11 @@ dependencies {
     forge "net.minecraftforge:forge:${rootProject.minecraft_version}-${rootProject.forge_version}"
 
     // Libs
-    //modImplementation("c2b/config2brigadier-forge.jar")
-    //shadowCommon("c2b/config2brigadier-forge.jar") { transitive false }
+    modImplementation("com.github.samolego.Config2Brigadier:config2brigadier-forge:${rootProject.c2b_version}")
+    shadowCommon("com.github.samolego.Config2Brigadier:config2brigadier-forge:${rootProject.c2b_version}") { transitive false }
 
-    modImplementation("com.github.samolego:forgified-sgui:${project.fsgui_version}")
-    shadowCommon("com.github.samolego:forgified-sgui:${project.fsgui_version}") { transitive false }
+    //modImplementation("com.github.samolego:forgified-sgui:${project.fsgui_version}")
+    //shadowCommon("com.github.samolego:forgified-sgui:${project.fsgui_version}") { transitive false }
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive false }

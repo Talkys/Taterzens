@@ -16,5 +16,5 @@ public interface AClientboundSetEntityDataPacket {
 
     @Mutable
     @Accessor("packedItems")
-    void setPackedItems(List<SynchedEntityData.DataValue<?>> packedItems);
+    void setPackedItems(List<SynchedEntityData.DataItem<?>> packedItems);
 }

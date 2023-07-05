@@ -19,6 +19,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.samo_lego.taterzens.Taterzens;
 import org.samo_lego.taterzens.api.TaterzensAPI;
@@ -37,8 +38,7 @@ import java.util.stream.IntStream;
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 import static net.minecraft.commands.arguments.MessageArgument.message;
-import static org.samo_lego.taterzens.Taterzens.TATERZEN_NPCS;
-import static org.samo_lego.taterzens.Taterzens.config;
+import static org.samo_lego.taterzens.Taterzens.*;
 import static org.samo_lego.taterzens.util.TextUtil.errorText;
 import static org.samo_lego.taterzens.util.TextUtil.successText;
 import static org.samo_lego.taterzens.util.TextUtil.translate;
@@ -383,10 +383,14 @@ public class NpcCommand {
         CommandSourceStack source = context.getSource();
         ServerPlayer player = source.getPlayerOrException();
 
+        LOGGER.log(Level.INFO,player);
+
         TaterzenNPC npc = ((ITaterzenEditor) player).getNpc();
         if(npc != null) {
             ((ITaterzenEditor) player).selectNpc(null);
         }
+
+        LOGGER.log(Level.INFO,"Got Taterzen API");
 
         String taterzenName;
         try {
@@ -396,6 +400,10 @@ public class NpcCommand {
             taterzenName = player.getGameProfile().getName();
         }
 
+        LOGGER.log(Level.INFO,"Got name:" + taterzenName);
+
+
+
         TaterzenNPC taterzen = TaterzensAPI.createTaterzen(player, taterzenName);
         // Making sure permission level is as high as owner's, to prevent permission bypassing.
         taterzen.setPermissionLevel(((CommandSourceStackAccessor) source).getPermissionLevel());
@@ -403,6 +411,9 @@ public class NpcCommand {
         // Lock if needed
         if (config.lockAfterCreation)
             taterzen.setLocked(player);
+
+        LOGGER.log(Level.INFO,"NPC");
+        LOGGER.log(Level.INFO,taterzen);
 
         player.getLevel().addFreshEntity(taterzen);
 
